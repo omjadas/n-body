@@ -9,6 +9,7 @@ const MPI_Comm comm = MPI_COMM_WORLD;
 const int root = 0;
 const double G = 6.67408 * pow(10, -11);
 const double dt = 1;
+const double softening = 0.00000001;
 
 typedef struct Vec2_s {
     double x;
@@ -59,9 +60,22 @@ double acceleration(double force, Body b) {
 }
 
 double distance(Body b1, Body b2) {
-    return sqrt(pow(b2.pos.x - b1.pos.x, 2) + pow(b2.pos.y - b1.pos.y, 2));
+    const double dx = b2.pos.x - b1.pos.x;
+    const double dy = b2.pos.y - b1.pos.y;
+    return sqrt(pow(dx, 2) + pow(dy, 2));
 }
 
 double force(Body b1, Body b2) {
-    return (G * b1.mass * b2.mass) / pow(distance(b1, b2), 2);
+    const double dist = distance(b1, b2);
+    return (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
+}
+
+Vec2 acceleration(Body b1, Body b2) {
+    const double F = force(b1, b2);
+    const Vec2 acc = {
+        b2.pos.x - b1.pos.x * F,
+        b2.pos.y - b1.pos.y * F,
+    };
+
+    return acc;
 }
