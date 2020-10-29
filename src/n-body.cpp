@@ -7,6 +7,7 @@ using namespace std;
 const MPI_Comm comm = MPI_COMM_WORLD;
 const int root = 0;
 const double G = 6.67408 * pow(10, -11);
+const double dt = 1;
 
 typedef struct s {
     double xPos;
@@ -15,6 +16,7 @@ typedef struct s {
     double force;
 } Body;
 
+double acceleration(double force, Body b);
 double distance(Body b1, Body b2);
 double force(Body b1, Body b2);
 
@@ -44,6 +46,10 @@ int main(int argc, char **argv) {
 
     MPI_Finalize();
     return 0;
+}
+
+double acceleration(double force, Body b) {
+    return force / b.mass;
 }
 
 double distance(Body b1, Body b2) {
