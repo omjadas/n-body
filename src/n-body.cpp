@@ -22,7 +22,7 @@ typedef struct Body_s {
     double mass;
 } Body;
 
-double acceleration(double force, Body b);
+Vec2 acceleration(double force, Body b);
 double distance(Body b1, Body b2);
 double force(Body b1, Body b2);
 
@@ -32,7 +32,10 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(comm, &rank);
 
     if (rank == root) {
+        int iterations;
         int n;
+
+        cin >> iterations;
         cin >> n;
 
         Body bodies[n];
@@ -55,8 +58,14 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-double acceleration(double force, Body b) {
-    return force / b.mass;
+Vec2 acceleration(Body b1, Body b2) {
+    const double F = force(b1, b2);
+    const Vec2 acc = {
+        b2.pos.x - b1.pos.x * F,
+        b2.pos.y - b1.pos.y * F,
+    };
+
+    return acc;
 }
 
 double distance(Body b1, Body b2) {
@@ -68,14 +77,4 @@ double distance(Body b1, Body b2) {
 double force(Body b1, Body b2) {
     const double dist = distance(b1, b2);
     return (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
-}
-
-Vec2 acceleration(Body b1, Body b2) {
-    const double F = force(b1, b2);
-    const Vec2 acc = {
-        b2.pos.x - b1.pos.x * F,
-        b2.pos.y - b1.pos.y * F,
-    };
-
-    return acc;
 }
