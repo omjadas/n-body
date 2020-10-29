@@ -1,5 +1,6 @@
 #include <math.h>
 #include <mpi.h>
+#include <iostream>
 #include <string>
 
 using namespace std;
@@ -9,11 +10,15 @@ const int root = 0;
 const double G = 6.67408 * pow(10, -11);
 const double dt = 1;
 
-typedef struct s {
-    double xPos;
-    double yPos;
+typedef struct Vec2_s {
+    double x;
+    double y;
+} Vec2;
+
+typedef struct Body_s {
+    Vec2 pos;
+    Vec2 velocity;
     double mass;
-    double force;
 } Body;
 
 double acceleration(double force, Body b);
@@ -34,10 +39,11 @@ int main(int argc, char **argv) {
         for (int i = 0; i < n; i++) {
             Body body;
 
-            cin >> body.xPos;
-            cin >> body.yPos;
+            cin >> body.pos.x;
+            cin >> body.pos.y;
+            cin >> body.velocity.x;
+            cin >> body.velocity.y;
             cin >> body.mass;
-            cin >> body.force;
 
             bodies[i] = body;
         }
@@ -53,7 +59,7 @@ double acceleration(double force, Body b) {
 }
 
 double distance(Body b1, Body b2) {
-    return sqrt(pow(b2.xPos - b1.xPos, 2) + pow(b2.yPos - b1.yPos, 2));
+    return sqrt(pow(b2.pos.x - b1.pos.x, 2) + pow(b2.pos.y - b1.pos.y, 2));
 }
 
 double force(Body b1, Body b2) {
