@@ -10,7 +10,7 @@ using namespace std;
 const MPI_Comm comm = MPI_COMM_WORLD;
 const int root = 0;
 const double G = 6.67408 * pow(10, -11);
-const double dt = 1 * pow(10, -5);
+const double dt = 1 * pow(10, -2);
 const double softening = 1 * pow(10, -5);
 const double theta = 0.5;
 
@@ -326,6 +326,8 @@ int main(int argc, char **argv) {
 
         Body bodies[n];
 
+        recvBodies(n, bodies);
+
         updateBodies(rank, size, iterations, n, bodies);
     }
 
@@ -364,43 +366,23 @@ void fillTree(int n, Body bodies[], QuadTree *qTree) {
 
 void updateBodies(int rank, int size, int iterations, int n, Body bodies[]) {
     for (int i = 0; i < iterations; i++) {
-        QuadTree qTree;
-
-        if (rank != root) {
-            recvBodies(n, bodies);
-            fillTree(n, bodies, &qTree);
-        } else {
-            for (int j = 0; j < n; j++) {
-                MPI_Bcast(&bodies[j], sizeof(Body), MPI_BYTE, root, comm);
-            }
-
-            fillTree(n, bodies, &qTree);
-        }
-
         Body updatedBodies[n];
+        QuadTree qTree;
+        fillTree(n, bodies, &qTree);
 
         for (int j = rank; j < n; j += size) {
             updatedBodies[j] = updateBody(bodies[j], qTree);
         }
 
-        if (rank == root) {
-            for (int k = 0; k < n; k += size) {
-                bodies[k] = updatedBodies[k];
-            }
+        for (int j = rank; j < n; j += size) {
+            bodies[j] = updatedBodies[j];
+        }
 
-            if (size > 1) {
-                for (int k = 1; k < size; k++) {
-                    for (int l = k; l < n; l += size) {
-                        MPI_Status status;
-                        MPI_Recv(&bodies[l], sizeof(Body), MPI_BYTE, k, l, comm,
-                                 &status);
-                    }
+        if (size > 1) {
+            for (int j = 0; j < size; j++) {
+                for (int k = j; k < n; k += size) {
+                    MPI_Bcast(&bodies[k], sizeof(Body), MPI_BYTE, j, comm);
                 }
-            }
-        } else {
-            for (int k = rank; k < n; k += size) {
-                MPI_Send(&updatedBodies[k], sizeof(Body), MPI_BYTE, root, k,
-                         comm);
             }
         }
     }
