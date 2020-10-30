@@ -98,10 +98,10 @@ struct QuadTree {
 
     bool contains(Body body) {
         if (
-            anchor.x < body.pos.x
-            && (anchor.x + width) > body.pos.x
-            && anchor.y < body.pos.y
-            && (anchor.y + width) > body.pos.y
+            body.pos.x >= anchor.x
+            && body.pos.x < (anchor.x + width)
+            && body.pos.y >= anchor.y
+            && body.pos.y < (anchor.y + width)
         ) {
             return true;
         }
@@ -178,6 +178,16 @@ int main(int argc, char **argv) {
             cin >> body.velocity.x;
             cin >> body.velocity.y;
             cin >> body.mass;
+
+            if (
+                body.pos.x < 0
+                || body.pos.x > 100
+                || body.pos.y < 0
+                || body.pos.y > 100
+            ) {
+                cerr << "x and y must be between 0 and 100" << endl;
+                return 1;
+            }
 
             qTree.insert(&body);
             MPI_Bcast(&body, sizeof(Body), MPI_BYTE, root, comm);
