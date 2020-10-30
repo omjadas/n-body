@@ -14,6 +14,43 @@ const double softening = 1 * pow(10, -5);
 struct Vec2 {
     double x;
     double y;
+
+    bool operator==(Vec2 v) {
+        return x == v.x && y == v.y;
+    }
+
+    Vec2 operator+(Vec2 v) {
+        return {
+            x + v.x,
+            y + v.y,
+        };
+    }
+
+    Vec2 operator-(Vec2 v) {
+        return {
+            x - v.x,
+            y - v.y,
+        };
+    }
+
+    Vec2 operator*(double d) {
+        return {
+            x * d,
+            y * d,
+        };
+    }
+
+    Vec2 operator/(double d) {
+        return {
+            x / d,
+            y / d,
+        };
+    }
+
+    void operator+=(Vec2 v) {
+        x += v.x;
+        y += v.y;
+    }
 };
 
 struct Body {
@@ -45,11 +82,36 @@ struct QuadTree {
     }
 
     Vec2 getPos() {
+        if (isEmpty()) {
+            return {
+                anchor.x + width / 2,
+                anchor.y + width / 2,
+            };
+        }
+
         if (isLeaf()) {
             return body->pos;
         }
 
-        return {};
+        Vec2 pos = { 0, 0 };
+
+        if (topLeft != nullptr) {
+            pos += topLeft->getPos();
+        }
+
+        if (topRight != nullptr) {
+            pos += topRight->getPos();
+        }
+
+        if (bottomLeft != nullptr) {
+            pos += bottomLeft->getPos();
+        }
+
+        if (bottomRight != nullptr) {
+            pos += bottomRight->getPos();
+        }
+
+        return pos / getMass();
     }
 
     void insert(Body *body) {
@@ -109,8 +171,19 @@ struct QuadTree {
         return false;
     }
 
+    bool isEmpty() {
+        if (!isLeaf()) {
+            return topLeft->isEmpty()
+                && topRight->isEmpty()
+                && bottomLeft->isEmpty()
+                && bottomRight->isEmpty();
+        }
+
+        return body != nullptr;
+    }
+
     double getMass() {
-        if (body != nullptr) {
+        if (isLeaf() && body != nullptr) {
             return body->mass;
         }
 
