@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3 -Wall -Wextra
+CFLAGS = -O3 -Wall -Wextra -Wno-c++11-extensions
 SRCDIR = ./src
 BINDIR = ./bin
 
