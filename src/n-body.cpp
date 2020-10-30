@@ -179,6 +179,7 @@ int main(int argc, char **argv) {
             cin >> body.velocity.y;
             cin >> body.mass;
 
+            qTree.insert(&body);
             MPI_Bcast(&body, sizeof(Body), MPI_BYTE, root, comm);
         }
 
