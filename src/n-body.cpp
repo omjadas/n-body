@@ -4,6 +4,7 @@
 #include <mpi.h>
 #include <sstream>
 #include <string>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -280,6 +281,7 @@ void updateBodies(int rank, int size, int iterations, int n, Body bodies[]);
 Body updateBody(Body body, QuadTree qTree);
 void recvBodies(int n, Body bodies[]);
 void fillTree(int n, Body bodies[], QuadTree *qTree);
+uint64_t GetTimeStamp();
 
 int main(int argc, char **argv) {
     int rank;
@@ -315,7 +317,11 @@ int main(int argc, char **argv) {
             MPI_Bcast(&body, sizeof(Body), MPI_BYTE, root, comm);
         }
 
+        uint64_t start = GetTimeStamp();
+
         updateBodies(rank, size, iterations, n, bodies);
+
+        printf("Time: %ld us\n", (uint64_t)(GetTimeStamp() - start));
 
         for (int i = 0; i < n; i++) {
             cout << bodies[i].str() << endl;
@@ -434,4 +440,10 @@ double distance(Vec2 v1, Vec2 v2) {
 Vec2 force(Body b1, Body b2) {
     const double dist = distance(b1, b2);
     return (b2.pos - b1.pos) * (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
+}
+
+uint64_t GetTimeStamp() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * (uint64_t)1000000 + tv.tv_usec;
 }
