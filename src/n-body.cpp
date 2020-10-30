@@ -51,6 +51,21 @@ struct Vec2 {
         x += v.x;
         y += v.y;
     }
+
+    void operator-=(Vec2 v) {
+        x -= v.x;
+        y -= v.y;
+    }
+
+    void operator*=(double d) {
+        x *= d;
+        y *= d;
+    }
+
+    void operator/=(double d) {
+        x /= d;
+        y /= d;
+    }
 };
 
 struct Body {
