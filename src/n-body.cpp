@@ -216,10 +216,7 @@ void doMPITask(int rank, int size) {
     MPI_Bcast(&iterations, 1, MPI_INT, root, comm);
     MPI_Bcast(&n, 1, MPI_INT, root, comm);
 
-    QuadTree qTree = QuadTree((Vec2){
-        0,
-        0
-    }, 100);
+    QuadTree qTree = QuadTree((Vec2){ 0, 0 }, 100);
 
     for (int i = 0; i < n; i++) {
         Body body;
