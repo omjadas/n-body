@@ -275,9 +275,9 @@ Vec2 acceleration(Body b1, Body b2);
 Vec2 acceleration(Body body, QuadTree qTree, Vec2 acc = { 0, 0 });
 double distance(Body b1, Body b2);
 double distance(Vec2 v1, Vec2 v2);
-double force(Body b1, Body b2);
+Vec2 force(Body b1, Body b2);
 void updateBodies(int rank, int size, int iterations, int n, Body bodies[]);
-Body updateBody(Body body, QuadTree qTree, int n);
+Body updateBody(Body body, QuadTree qTree);
 void recvBodies(int n, Body bodies[]);
 void fillTree(int n, Body bodies[], QuadTree *qTree);
 
@@ -380,7 +380,7 @@ void updateBodies(int rank, int size, int iterations, int n, Body bodies[]) {
         Body updatedBodies[n];
 
         for (int j = rank; j < n; j += size) {
-            updatedBodies[j] = updateBody(bodies[j], qTree, i);
+            updatedBodies[j] = updateBody(bodies[j], qTree);
         }
 
         if (rank == root) {
@@ -406,7 +406,7 @@ void updateBodies(int rank, int size, int iterations, int n, Body bodies[]) {
     }
 }
 
-Body updateBody(Body body, QuadTree qTree, int n) {
+Body updateBody(Body body, QuadTree qTree) {
     Vec2 acc = acceleration(body, qTree);
     Body newBody = Body(body.id, body.pos, body.velocity, body.mass);
     newBody.velocity += acc * dt;
@@ -416,11 +416,7 @@ Body updateBody(Body body, QuadTree qTree, int n) {
 }
 
 Vec2 acceleration(Body b1, Body b2) {
-    const double F = force(b1, b2);
-    return {
-        b2.pos.x - b1.pos.x * F,
-        b2.pos.y - b1.pos.y * F,
-    };
+    return force(b1, b2) / b1.mass;
 }
 
 Vec2 acceleration(Body body, QuadTree qTree, Vec2 acc) {
@@ -453,7 +449,7 @@ double distance(Vec2 v1, Vec2 v2) {
     return sqrt(pow(dx, 2) + pow(dy, 2));
 }
 
-double force(Body b1, Body b2) {
+Vec2 force(Body b1, Body b2) {
     const double dist = distance(b1, b2);
-    return (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
+    return (b2.pos - b1.pos) * (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
 }
