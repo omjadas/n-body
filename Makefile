@@ -8,7 +8,7 @@ default: mpi
 mpi: $(SRCDIR)/n-body.cpp bin-dir
 	mpicxx $(CFLAGS) -o $(BINDIR)/n-body $(SRCDIR)/n-body.cpp
 
-debug: CFLAGS += -DDEBUG
+debug: CFLAGS += -g -DDEBUG -fsanitize=address
 debug: default
 
 bin-dir:
