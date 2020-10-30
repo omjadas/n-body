@@ -412,8 +412,6 @@ Body updateBody(Body body, QuadTree qTree, int n) {
     newBody.velocity += acc * dt;
     newBody.pos += newBody.velocity * dt;
 
-    printf("%d\n%d\n%f\n%f\n%f\n%f\n\n", body.id, n, body.velocity.x, body.velocity.y, newBody.velocity.x, newBody.velocity.y);
-
     return newBody;
 }
 
