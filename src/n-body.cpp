@@ -89,11 +89,14 @@ struct QuadTree {
         width = w;
     }
 
-    static QuadTree root() {
-        return QuadTree((Vec2){
-            0,
-            0
-        }, 100);
+    QuadTree() {
+        anchor = (Vec2) { 0, 0 };
+        width = 100;
+    }
+
+    QuadTree(double w) {
+        anchor = (Vec2) { 0, 0 };
+        width = w;
     }
 
     Vec2 getPos() {
@@ -244,7 +247,7 @@ int main(int argc, char **argv) {
     MPI_Comm_size(comm, &size);
 
     if (rank == root) {
-        QuadTree qTree = QuadTree::root();
+        QuadTree qTree;
 
         int iterations;
         int n;
@@ -315,7 +318,7 @@ void doMPITask(int rank, int size) {
     MPI_Bcast(&iterations, 1, MPI_INT, root, comm);
     MPI_Bcast(&n, 1, MPI_INT, root, comm);
 
-    QuadTree qTree = QuadTree((Vec2){ 0, 0 }, 100);
+    QuadTree qTree;
 
     for (int i = 0; i < n; i++) {
         Body body;
