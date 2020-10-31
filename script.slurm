@@ -12,5 +12,5 @@
 module load gcc/8.3.0
 module load openmpi/3.1.4
 
-mpicxx -O3 -o n-body b-body.cpp
+mpicxx -O3 -o n-body n-body.cpp
 cat in.dat | mpiexec ./n-body
