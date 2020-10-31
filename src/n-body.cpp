@@ -8,6 +8,8 @@
 
 using namespace std;
 
+// Constants
+
 const MPI_Comm comm = MPI_COMM_WORLD;
 const int root = 0;
 const double G = 6.67408 * pow(10, -11);
@@ -15,6 +17,9 @@ const double dt = 1 * pow(10, -2);
 const double softening = 1 * pow(10, -5);
 const double theta = 0.5;
 
+/**
+ * Struct representing a vector with two numeric elements.
+ */
 struct Vec2 {
     double x;
     double y;
@@ -82,6 +87,9 @@ struct Vec2 {
     }
 };
 
+/**
+ * Struct representing a body in space.
+ */
 struct Body {
     int id;
     Vec2 pos;
@@ -103,6 +111,9 @@ struct Body {
         mass = m;
     }
 
+    /**
+     * @return string representation of the body
+     */
     string str() {
         ostringstream s;
         s << pos.x << " "
@@ -114,6 +125,9 @@ struct Body {
     }
 };
 
+/**
+ * Struct representing a node in a QuadTree.
+ */
 struct QuadTree {
     QuadTree *topLeft = nullptr;
     QuadTree *topRight = nullptr;
@@ -138,6 +152,9 @@ struct QuadTree {
         width = w;
     }
 
+    /**
+     * @return the centre of mass for the current node in the QuadTree
+     */
     Vec2 getPos() {
         if (isEmpty()) {
             return {
@@ -158,6 +175,9 @@ struct QuadTree {
         return pos / getMass();
     }
 
+    /**
+     * @return the centre of mass velocity for the current node in the QuadTree
+     */
     Vec2 getVelocity() {
         if (isLeaf() && body != nullptr) {
             return body->velocity;
@@ -173,6 +193,9 @@ struct QuadTree {
         return vel / getMass();
     }
 
+    /**
+     * @return the total mass of the current node of the QuadTree
+     */
     double getMass() {
         if (isEmpty()) {
             return 0;
@@ -190,6 +213,11 @@ struct QuadTree {
         return mass;
     }
 
+    /**
+     * Insert a body into the QuadTree
+     *
+     * @param body pointer to the body to insert
+     */
     void insert(Body *body) {
         if (isLeaf() && this->body == nullptr) {
             this->body = body;
@@ -236,10 +264,18 @@ struct QuadTree {
         }
     }
 
+    /**
+     * @return the current node of the QuadTree represented as a single body
+     */
     Body asBody() {
         return Body(getPos(), getVelocity(), getMass());
     }
 
+    /**
+     * @param body body to determine if it is in the current node
+     * @return whether the current node of the QuadTree geometrically contains a
+     *         given body.
+     */
     bool contains(Body body) {
         if (
             body.pos.x >= anchor.x
@@ -253,6 +289,9 @@ struct QuadTree {
         return false;
     }
 
+    /**
+     * @return whether the current node of the QuadTree is empty
+     */
     bool isEmpty() {
         if (!isLeaf()) {
             return topLeft->isEmpty()
@@ -264,6 +303,9 @@ struct QuadTree {
         return body == nullptr;
     }
 
+    /**
+     * @return whether the current node of the QuadTree is a leaf
+     */
     bool isLeaf() {
         return topLeft == nullptr
             && topRight == nullptr
@@ -271,6 +313,8 @@ struct QuadTree {
             && bottomRight == nullptr;
     }
 };
+
+// Function declarations
 
 Vec2 acceleration(Body b1, Body b2);
 Vec2 acceleration(Body body, QuadTree qTree, Vec2 acc = { 0, 0 });
@@ -280,9 +324,16 @@ Vec2 force(Body b1, Body b2);
 void updateBodies(int rank, int size, int iterations, int n, Body bodies[]);
 Body updateBody(Body body, QuadTree qTree);
 void recvBodies(int n, Body bodies[]);
-void fillTree(int n, Body bodies[], QuadTree *qTree);
+void initialiseTree(int n, Body bodies[], QuadTree *qTree);
 uint64_t GetTimeStamp();
 
+/**
+ * Main function.
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return exit code
+ */
 int main(int argc, char **argv) {
     int rank;
     int size;
@@ -302,6 +353,7 @@ int main(int argc, char **argv) {
 
         Body bodies[n];
 
+        // Read bodies from stdin and broadcast them to other processes
         for (int i = 0; i < n; i++) {
             Body body;
 
@@ -333,7 +385,6 @@ int main(int argc, char **argv) {
         Body bodies[n];
 
         recvBodies(n, bodies);
-
         updateBodies(rank, size, iterations, n, bodies);
     }
 
@@ -341,6 +392,12 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+/**
+ * Receive bodies from the root node.
+ *
+ * @param number of bodies to receive
+ * @param bodies array to insert received bodies into
+ */
 void recvBodies(int n, Body bodies[]) {
     for (int i = 0; i < n; i++) {
         Body body;
@@ -349,7 +406,14 @@ void recvBodies(int n, Body bodies[]) {
     }
 }
 
-void fillTree(int n, Body bodies[], QuadTree *qTree) {
+/**
+ * Initialise a QuadTree with the given bodies.
+ *
+ * @param n      number of bodies
+ * @param bodies bodies to insert into the tree
+ * @param qTree  pointer to the QuadTree to insert the bodies into
+ */
+void initialiseTree(int n, Body bodies[], QuadTree *qTree) {
     double minx = numeric_limits<double>::max();
     double miny = numeric_limits<double>::max();
     double maxx = numeric_limits<double>::min();
@@ -370,11 +434,20 @@ void fillTree(int n, Body bodies[], QuadTree *qTree) {
     }
 }
 
+/**
+ * Update all bodies for the given number of iterations.
+ *
+ * @param rank       rank of the running process
+ * @param size       number of processes running in the cluster
+ * @param iterations number of iterations to calculate
+ * @param n          number of bodies
+ * @param bodies     bodies to simulate
+ */
 void updateBodies(int rank, int size, int iterations, int n, Body bodies[]) {
     for (int i = 0; i < iterations; i++) {
         Body updatedBodies[n];
         QuadTree qTree;
-        fillTree(n, bodies, &qTree);
+        initialiseTree(n, bodies, &qTree);
 
         for (int j = rank; j < n; j += size) {
             updatedBodies[j] = updateBody(bodies[j], qTree);
@@ -394,6 +467,13 @@ void updateBodies(int rank, int size, int iterations, int n, Body bodies[]) {
     }
 }
 
+/**
+ * Update a body given the current state of the QuadTree.
+ *
+ * @param body  body to update
+ * @param qTree current state of the simulation
+ * @return updated body
+ */
 Body updateBody(Body body, QuadTree qTree) {
     Vec2 acc = acceleration(body, qTree);
     Body newBody = Body(body.id, body.pos, body.velocity, body.mass);
@@ -403,10 +483,26 @@ Body updateBody(Body body, QuadTree qTree) {
     return newBody;
 }
 
+/**
+ * Calculate the acceleration of a body due to another body.
+ *
+ * @param b1 body to calculate acceleration for
+ * @param b2 other body
+ * @return accelerator vector for b1
+ */
 Vec2 acceleration(Body b1, Body b2) {
     return force(b1, b2) / b1.mass;
 }
 
+/**
+ * Recursively calculate the total acceleration of a body due to all other
+ * bodies.
+ *
+ * @param body  to calculate acceleration for
+ * @param qTree current state of the simulation
+ * @param acc   acceleration of the body
+ * @return acceleration vector
+ */
 Vec2 acceleration(Body body, QuadTree qTree, Vec2 acc) {
     if (qTree.isEmpty()) {
         return acc;
@@ -427,21 +523,45 @@ Vec2 acceleration(Body body, QuadTree qTree, Vec2 acc) {
     return acc;
 }
 
+/**
+ * Calculate the distance between two bodies.
+ *
+ * @param b1 first body
+ * @param b2 second body
+ * @return distance between the two bodies
+ */
 double distance(Body b1, Body b2) {
     return distance(b1.pos, b2.pos);
 }
 
+/**
+ * Calculate the distance between two Vec2s.
+ *
+ * @param v1 first Vec2
+ * @param v2 second Vec2
+ * @return distance between the two Vec2s
+ */
 double distance(Vec2 v1, Vec2 v2) {
     const double dx = v1.x - v2.x;
     const double dy = v1.y - v2.y;
     return sqrt(pow(dx, 2) + pow(dy, 2));
 }
 
+/**
+ * Calculate the force between two bodies.
+ *
+ * @param b1 first body
+ * @param b2 second body
+ * @return the force vector for the two bodies
+ */
 Vec2 force(Body b1, Body b2) {
     const double dist = distance(b1, b2);
     return (b2.pos - b1.pos) * (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
 }
 
+/**
+ * @return current time
+ */
 uint64_t GetTimeStamp() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
