@@ -556,7 +556,8 @@ double distance(Vec2 v1, Vec2 v2) {
  */
 Vec2 force(Body b1, Body b2) {
     const double dist = distance(b1, b2);
-    return (b2.pos - b1.pos) * (G * b1.mass * b2.mass) / (pow(dist, 2) + pow(softening, 2));
+    return ((b2.pos - b1.pos) * (G * b1.mass * b2.mass))
+        / (pow(dist, 2) + pow(softening, 2));
 }
 
 /**
